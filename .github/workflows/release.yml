@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: read
+  id-token: write
+
+jobs:
+  release:
+    name: Publish & Release
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine bump type
+        id: bump
+        run: |
+          LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+
+          HAS_MAJOR=$(echo "$LABELS" | jq -r 'map(select(. == "major")) | length')
+          HAS_MINOR=$(echo "$LABELS" | jq -r 'map(select(. == "minor")) | length')
+          HAS_PATCH=$(echo "$LABELS" | jq -r 'map(select(. == "patch")) | length')
+
+          COUNT=$(( HAS_MAJOR + HAS_MINOR + HAS_PATCH ))
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::Release PR must have exactly one of: patch, minor, major labels"
+            exit 1
+          fi
+          if [ "$COUNT" -gt 1 ]; then
+            echo "::error::Release PR must have exactly one of: patch, minor, major labels (found $COUNT)"
+            exit 1
+          fi
+
+          if [ "$HAS_MAJOR" -eq 1 ]; then
+            echo "type=major" >> "$GITHUB_OUTPUT"
+          elif [ "$HAS_MINOR" -eq 1 ]; then
+            echo "type=minor" >> "$GITHUB_OUTPUT"
+          else
+            echo "type=patch" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Bump version
+        id: version
+        run: |
+          npm version ${{ steps.bump.outputs.type }} --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Bumped to v$VERSION (${{ steps.bump.outputs.type }})"
+
+      - name: Build
+        run: bun run build
+
+      - name: Type-check
+        run: bunx tsc --noEmit
+
+      - name: Publish to npm
+        run: npm publish
+
+      - name: Commit version bump & tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: release v${{ steps.version.outputs.version }}"
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin main --follow-tags
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
