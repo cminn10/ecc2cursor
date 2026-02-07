@@ -4,6 +4,10 @@
   "description": "Sync Everything Claude Code (ECC) configs into Cursor IDE — rules, skills, agents, commands, and MCP servers. One command to supercharge your Cursor setup.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cminn10/ecc2cursor"
+  },
   "bin": {
     "ecc2cursor": "dist/cli.mjs"
   },

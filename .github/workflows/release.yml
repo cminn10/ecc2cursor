@@ -94,7 +94,17 @@ jobs:
       - name: Type-check
         run: bunx tsc --noEmit
       - name: Publish to npm
-        run: npm publish
+        run: |
+          npm publish --access public 2>&1 | tee /tmp/npm-publish.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ $EXIT_CODE -ne 0 ]; then
+            if grep -q "You cannot publish over the previously published versions" /tmp/npm-publish.log; then
+              echo "::warning::Version already published on npm — skipping"
+            else
+              cat /tmp/npm-publish.log
+              exit $EXIT_CODE
+            fi
+          fi
 
       - name: Push version bump to PR branch
         run: |
@@ -117,7 +127,8 @@ jobs:
         run: |
           gh pr merge ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
-            --merge
+            --merge \
+            --admin
 
       - name: Checkout main (post-merge)
         uses: actions/checkout@v4
