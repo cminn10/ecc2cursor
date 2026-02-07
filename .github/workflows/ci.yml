@@ -8,6 +8,8 @@ jobs:
   build:
     name: Build & Type-check
     runs-on: ubuntu-latest
+    # Skip redundant CI runs for automated version bump commits
+    if: github.actor != 'github-actions[bot]'
 
     steps:
       - name: Checkout

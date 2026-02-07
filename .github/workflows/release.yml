@@ -2,26 +2,25 @@ name: Release
 
 on:
   pull_request:
-    types: [closed]
+    types: [labeled]
     branches: [main]
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
   id-token: write
 
 jobs:
-  release:
-    name: Publish & Release
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+  # ── Job 1: Validate labels ──────────────────────────────────────────────────
+  validate:
+    name: Validate release labels
+    if: github.event.label.name == 'release'
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    outputs:
+      bump: ${{ steps.bump.outputs.type }}
 
+    steps:
       - name: Determine bump type
         id: bump
         run: |
@@ -50,6 +49,25 @@ jobs:
             echo "type=patch" >> "$GITHUB_OUTPUT"
           fi
 
+          echo "Bump type: $(cat "$GITHUB_OUTPUT" | grep type | cut -d= -f2)"
+
+  # ── Job 2: Publish to npm (requires manual approval) ────────────────────────
+  publish:
+    name: Publish to npm
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: npm-publish
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
@@ -65,10 +83,10 @@ jobs:
       - name: Bump version
         id: version
         run: |
-          npm version ${{ steps.bump.outputs.type }} --no-git-tag-version
+          npm version ${{ needs.validate.outputs.bump }} --no-git-tag-version
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Bumped to v$VERSION (${{ steps.bump.outputs.type }})"
+          echo "Bumped to v$VERSION (${{ needs.validate.outputs.bump }})"
 
       - name: Build
         run: bun run build
@@ -79,18 +97,45 @@ jobs:
       - name: Publish to npm
         run: npm publish
 
-      - name: Commit version bump & tag
+      - name: Push version bump to PR branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
           git commit -m "chore: release v${{ steps.version.outputs.version }}"
-          git tag "v${{ steps.version.outputs.version }}"
-          git push origin main --follow-tags
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
+  # ── Job 3: Merge PR, tag, and create GitHub Release ─────────────────────────
+  finalize:
+    name: Merge & Release
+    needs: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Merge PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --merge
+
+      - name: Checkout main (post-merge)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Tag release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ needs.publish.outputs.version }}"
+          git push origin "v${{ needs.publish.outputs.version }}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
+          tag_name: v${{ needs.publish.outputs.version }}
+          name: v${{ needs.publish.outputs.version }}
           generate_release_notes: true
