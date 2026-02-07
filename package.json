@@ -1,7 +1,7 @@
 {
   "name": "ecc2cursor",
   "version": "0.0.1",
-  "description": "Sync Everything Claude Code configs into Cursor (skills, agents, commands, MCP)",
+  "description": "Sync Everything Claude Code (ECC) configs into Cursor IDE — rules, skills, agents, commands, and MCP servers. One command to supercharge your Cursor setup.",
   "type": "module",
   "license": "MIT",
   "bin": {
@@ -10,14 +10,27 @@
   "files": ["dist", "README.md", "LICENSE"],
   "keywords": [
     "cursor",
+    "cursor-ide",
+    "cursor-rules",
+    "cursor-skills",
+    "cursor-agents",
+    "cursor-commands",
+    "cursor-configuration",
+    "cursor-mcp",
     "claude",
     "claude-code",
     "everything-claude-code",
     "ecc",
-    "cursor-skills",
-    "cursor-agents",
     "mcp",
-    "cli"
+    "mcp-servers",
+    "model-context-protocol",
+    "ai-coding",
+    "ai-tools",
+    "config-sync",
+    "cli",
+    "npx",
+    "bunx",
+    "bun"
   ],
   "scripts": {
     "build": "tsdown",

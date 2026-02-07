@@ -1,13 +1,37 @@
 # ecc2cursor
 
-Sync [Everything Claude Code](https://github.com/affaan-m/everything-claude-code) configs into Cursor — skills, agents, commands, and MCP servers.
+[![npm version](https://img.shields.io/npm/v/ecc2cursor)](https://www.npmjs.com/package/ecc2cursor)
+[![license](https://img.shields.io/npm/l/ecc2cursor)](./LICENSE)
+[![node](https://img.shields.io/node/v/ecc2cursor)](https://nodejs.org)
+
+> Bring battle-tested **Cursor rules**, **skills**, **agents**, **commands**, and **MCP servers** from [Everything Claude Code](https://github.com/affaan-m/everything-claude-code) into your Cursor IDE setup — with a single command.
 
 **Zero config. Fully stateless.** No hidden files, no persistent state. Just run it.
 
+## Why ecc2cursor?
+
+[Everything Claude Code](https://github.com/affaan-m/everything-claude-code) (ECC) is a curated collection of AI coding configurations — rules for dozens of languages, reusable skills, specialized agents, and pre-configured MCP servers. It's built for Claude Code, but the patterns are universal.
+
+**ecc2cursor** automatically translates and installs these configs into Cursor's format:
+
+- **Cursor Rules** — coding standards for TypeScript, Python, Go, Java, Django, Spring Boot, and more
+- **Cursor Skills** — reusable prompt-driven workflows (TDD, code review, security audit, planning, etc.)
+- **Cursor Agents** — specialized subagents for build errors, refactoring, database review, E2E tests
+- **Cursor Commands** — one-click actions for common workflows
+- **MCP Servers** — pre-configured Model Context Protocol integrations
+
+No manual copying. No format mismatches. Just `npx ecc2cursor` and pick what you need.
+
 ## Quick Start
 
+<!-- TODO: Add terminal recording GIF here (e.g. via asciinema or charmbracelet/vhs) -->
+
 ```bash
+# npm
 npx ecc2cursor
+
+# bun
+bunx ecc2cursor
 ```
 
 This launches an interactive wizard that walks you through:
@@ -22,7 +46,7 @@ This launches an interactive wizard that walks you through:
 
 ```bash
 # Sync everything with defaults to ~/.cursor/
-npx ecc2cursor sync
+npx ecc2cursor sync        # or: bunx ecc2cursor sync
 
 # Sync to a specific directory
 npx ecc2cursor sync --dir=./my-project/.cursor
@@ -39,6 +63,8 @@ npx ecc2cursor clean
 # Sync without a prefix (use original file names)
 npx ecc2cursor sync --no-prefix
 ```
+
+> **Tip:** All `npx` commands work with `bunx` too — just swap the prefix.
 
 ## How It Works
 
@@ -90,8 +116,18 @@ All synced content is automatically adapted:
 
 ## Requirements
 
-- **Node.js >= 20**
+- **Node.js >= 20** or **Bun**
 - **Git** (for cloning the source repository)
+
+## Related Projects
+
+- [Everything Claude Code](https://github.com/affaan-m/everything-claude-code) — the source collection of AI coding configs this tool syncs from
+- [Cursor IDE](https://cursor.com) — the AI-first code editor these configs target
+- [Model Context Protocol](https://modelcontextprotocol.io) — the open standard for MCP servers synced by this tool
+
+## Contributing
+
+Found a bug? Want to add a new translator? PRs and issues welcome. See the [ECC repository](https://github.com/affaan-m/everything-claude-code) for the upstream config source.
 
 ## License
 
