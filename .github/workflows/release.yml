@@ -93,22 +93,8 @@ jobs:
 
       - name: Type-check
         run: bunx tsc --noEmit
-
-      - name: Verify npm supports trusted publishing
-        run: |
-          NPM_VERSION=$(npm --version)
-          echo "npm version: $NPM_VERSION"
-          MAJOR=$(echo "$NPM_VERSION" | cut -d. -f1)
-          if [ "$MAJOR" -lt 11 ]; then
-            echo "::error::npm >= 11.5.1 required for trusted publishing (found $NPM_VERSION)"
-            exit 1
-          fi
-
-      - name: Clear .npmrc auth token (let npm use OIDC)
-        run: npm config delete //registry.npmjs.org/:_authToken || true
-
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish
 
       - name: Push version bump to PR branch
         run: |
